@@ -400,6 +400,7 @@ void DNAsequence::Find_DNA_sequence_by_input(TicToc time){
   cout << "Enter a nucleotide sequence that you would like to look for in the specified file:" << endl;
   cout << ">";
   cin >> input;
+  cout << endl;
   time.tic();
   char DNAsequencearr[input.length()];            //creates an array of the same size as our inout that we will use to load the contents of our input into its own linked list to compare with the file we want
   for (int i=0; i<input.length(); i++){   //loads contents of string into array
@@ -407,13 +408,15 @@ void DNAsequence::Find_DNA_sequence_by_input(TicToc time){
     input_DNAsequence.add_nucleotide(input[i]);    //adds nucleotide to new DNA sequence
   }
   Nucleotide* p_seek_input= input_DNAsequence.get_Nucleotide_head();
+  Nucleotide* p_return_to_place;
   bool match=false; //lets user know if a match has been found
   int counter;
   while(p_seek_file!=nullptr){
     start_index++;
-    p_seek_input= input_DNAsequence.get_Nucleotide_head();
+    p_seek_input=input_DNAsequence.get_Nucleotide_head();
     if (p_seek_file->get_nucleotide()==p_seek_input->get_nucleotide()){
       p_print_10_temp=p_seek_file; //sets print_10 pointer to the first nucleotide in the matched sequence
+      p_return_to_place=p_seek_file;
       for(counter=1; counter<input.length(); counter++){
         p_seek_file=p_seek_file->get_next_nucleotide();
         p_seek_input=p_seek_input->get_next_nucleotide();
@@ -421,12 +424,9 @@ void DNAsequence::Find_DNA_sequence_by_input(TicToc time){
           break;
         }
       }
-      // cout << "counter:  " << counter << endl;
-      // cout << "input.length():  " << input.length() << endl;
       if (counter==input.length()){
-        cout << "you found a match!" << endl;
+        cout << endl << "you found a match!" << endl;
         match=true;
-        start_index=start_index;
         end_index=start_index+input.length()-1;
         DNAsequence ten_bases_before;
         DNAsequence ten_bases_after;
@@ -447,16 +447,32 @@ void DNAsequence::Find_DNA_sequence_by_input(TicToc time){
         // obtaining 10 following base pairs
         p_print_10_temp=p_seek_file; //sets print_10 pointer to the last nucleotide that was matched
         for (int i=0; i<10; i++ ){
-          if(p_print_10_temp->get_next_nucleotide()!=nullptr){
-            p_print_10_temp=p_print_10_temp->get_next_nucleotide();
-            ten_bases_after.add_nucleotide(p_print_10_temp->get_nucleotide());
+          if (p_print_10_temp!=nullptr){
+            if(p_print_10_temp->get_next_nucleotide()!=nullptr){
+              p_print_10_temp=p_print_10_temp->get_next_nucleotide();
+              ten_bases_after.add_nucleotide(p_print_10_temp->get_nucleotide());
+            } else {break;}
+          } else {
+            break;
           }
         }
-        cout << ten_bases_after;
-        start_index=end_index;
+        if (ten_bases_after.get_Nucleotide_head()!=nullptr){
+          cout << ten_bases_after << endl;
+          start_index=end_index;
+        } else {
+          cout << endl;
+          break;
+        }
       }
     }
-    p_seek_file=p_seek_file->get_next_nucleotide();
+
+    // p_seek_file=p_seek_file->get_next_nucleotide();
+    if (p_return_to_place != nullptr){
+      p_seek_file=p_return_to_place->get_next_nucleotide();
+    } else {
+      p_seek_file = nullptr;
+    }
+
   }
   if (match==false)
   cout << "no match was found" << endl;
@@ -765,7 +781,6 @@ void DNAsequence::Delete_DNA_sequence_by_input(TicToc time){
   time.tic();
   if (start_index==0){
     p_before_deletion=nullptr;
-    base_length_deleted--;
   }
   else{
     for (int i=1; i<start_index;i++){
@@ -773,16 +788,27 @@ void DNAsequence::Delete_DNA_sequence_by_input(TicToc time){
     }
     p_before_deletion=p_seek;
   }
-  cout << "hello ???" << endl;
-  cout << "p_before_deletion:  " << p_before_deletion << endl;
-  cout << "hello ???" << endl;
   for (int i=0; i<base_length_deleted; i++){
     if (p_seek->get_next_nucleotide()!=nullptr){
-      deleted_sequence.add_nucleotide(p_seek->get_nucleotide());
-      p_seek=p_seek->get_next_nucleotide();
+      if(start_index==0){
+        deleted_sequence.add_nucleotide(p_seek->get_nucleotide());
+        cout << endl;
+        p_seek=p_seek->get_next_nucleotide();
+      }
+      else{
+        p_seek=p_seek->get_next_nucleotide();
+        deleted_sequence.add_nucleotide(p_seek->get_nucleotide());
+        cout << endl;
+
+      }
     }
   }
-  p_after_deletion=p_seek->get_next_nucleotide();
+  if (p_before_deletion!=nullptr){
+    p_after_deletion=p_seek->get_next_nucleotide();
+  } else {
+    p_after_deletion=p_seek;
+  }
+
   cout << "p_after_deletion" << p_after_deletion->get_nucleotide() << endl;
   if (p_before_deletion!=nullptr){
     p_before_deletion->set_next_nucleotide(p_after_deletion);
@@ -850,14 +876,37 @@ void DNAsequence::Replace_DNA_sequence_by_input(TicToc time){
   cin >> base_length_deleted;
   time.tic();
   cout << endl;
-  for (int i=1; i<start_index;i++){
-    p_seek=p_seek->get_next_nucleotide();
+
+  if (start_index==0){
+    p_before_deletion=nullptr;
   }
-  p_before_deletion=p_seek;
+  else{
+    for (int i=1; i<start_index;i++){
+      p_seek=p_seek->get_next_nucleotide();
+    }
+    p_before_deletion=p_seek;
+  }
   for (int i=0; i<base_length_deleted; i++){
-    p_seek=p_seek->get_next_nucleotide();
+    if (p_seek->get_next_nucleotide()!=nullptr){
+      if(start_index==0){
+        cout << endl;
+        p_seek=p_seek->get_next_nucleotide();
+      }
+      else{
+        p_seek=p_seek->get_next_nucleotide();
+        cout << endl;
+
+      }
+    }
   }
-  p_after_deletion=p_seek->get_next_nucleotide();
+
+
+  if (p_before_deletion!=nullptr){
+    p_after_deletion=p_seek->get_next_nucleotide();
+  } else {
+    p_after_deletion=p_seek;
+  }
+
   for (int i=0; i<input.length(); i++){
     Nucleotide* new_nuc = new Nucleotide(input[i]);   //loads contents of string into list
     if (head == nullptr){
@@ -870,12 +919,18 @@ void DNAsequence::Replace_DNA_sequence_by_input(TicToc time){
       tail = new_nuc; //sets tail pointer to the new tail
     }
   }
-  p_before_deletion->set_next_nucleotide(head);
-  head->set_prev_nucleotide(p_before_deletion);
+
+  if (p_before_deletion!=nullptr){
+    p_before_deletion->set_next_nucleotide(head);
+    head->set_prev_nucleotide(p_before_deletion);
+  }
+  else{
+    p_head_nucleotide = head;
+  }
   p_after_deletion->set_prev_nucleotide(tail);
   tail->set_next_nucleotide(p_after_deletion);
 
-  start_index=start_index-1;
+  start_index=start_index;
   end_index=start_index+input.length()-1;
   DNAsequence ten_bases_before;
   DNAsequence ten_bases_after;
@@ -962,27 +1017,50 @@ void DNAsequence::Replace_DNA_sequence_by_file(TicToc time){
           tail->set_next_nucleotide(new_nuc);
           new_nuc->set_prev_nucleotide(tail);
           tail=new_nuc;
+          base_length_added++;
         }
+      }
+    }
+  }
+  if (start_index==0){
+    p_before_deletion=nullptr;
+  }
+  else{
+    for (int i=1; i<start_index;i++){
+      p_seek=p_seek->get_next_nucleotide();
+    }
+    p_before_deletion=p_seek;
+  }
+  for (int i=0; i<base_length_deleted; i++){
+    if (p_seek->get_next_nucleotide()!=nullptr){
+      if(start_index==0){
+        cout << endl;
+        p_seek=p_seek->get_next_nucleotide();
+      }
+      else{
+        p_seek=p_seek->get_next_nucleotide();
+        cout << endl;
       }
     }
   }
 
 
-
-  for (int i=1; i<start_index;i++){
-    p_seek=p_seek->get_next_nucleotide();
+  if (p_before_deletion!=nullptr){
+    p_after_deletion=p_seek->get_next_nucleotide();
+  } else {
+    p_after_deletion=p_seek;
   }
-  p_before_deletion=p_seek;
-  for (int i=0; i<base_length_added; i++){
-    p_seek=p_seek->get_next_nucleotide();
+  if (p_before_deletion!=nullptr){
+    p_before_deletion->set_next_nucleotide(head);
+    head->set_prev_nucleotide(p_before_deletion);
   }
-  p_after_deletion=p_seek->get_next_nucleotide(); //sets the pointer after deleted section to one after the lentgh of nucleotides to be deleted
-
-  p_before_deletion->set_next_nucleotide(head);
-  head->set_prev_nucleotide(p_before_deletion);
+  else{
+    p_head_nucleotide = head;
+  }
   p_after_deletion->set_prev_nucleotide(tail);
   tail->set_next_nucleotide(p_after_deletion);
-  start_index=start_index-1;
+
+  start_index=start_index;
   end_index=start_index+base_length_added-1;
   DNAsequence ten_bases_before;
   DNAsequence ten_bases_after;
