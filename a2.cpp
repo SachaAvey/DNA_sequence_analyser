@@ -39,6 +39,8 @@ class DNAsequence{
     void copylist(DNAsequence*);
     string getfilename();
     void set_filename(string);
+    void set_p_head_nucleotide(Nucleotide*);
+    void set_p_tail_nucleotide(Nucleotide*);
     Nucleotide* get_Nucleotide_head();
     void set_Next_DNAsequence(DNAsequence*);
     void set_prev_DNAsequence(DNAsequence*);
@@ -55,6 +57,7 @@ class DNAsequence{
     void Delete_DNA_sequence_by_input(TicToc time);
     void Replace_DNA_sequence_by_input(TicToc time);
     void Replace_DNA_sequence_by_file(TicToc time);
+    void add_DNA_sequence(int,Nucleotide*, Nucleotide*, Nucleotide*);
     friend ostream& operator <<(ostream& os, const DNAsequence& DNAseq);
     // ~DNAsequence();
 };
@@ -350,6 +353,12 @@ string DNAsequence::getfilename(){
 void DNAsequence::set_filename(string filename_in){
   filename=filename_in;
 }
+void DNAsequence::set_p_head_nucleotide(Nucleotide* p_in){
+  p_head_nucleotide=p_in;
+}
+void DNAsequence::set_p_tail_nucleotide(Nucleotide* p_in){
+  p_tail_nucleotide=p_in;
+}
 void DNAsequence::set_Next_DNAsequence(DNAsequence* p_next_in){
   p_next_DNAsequence=p_next_in;
 }
@@ -372,10 +381,10 @@ void DNAsequence::add_nucleotide(char nucleotide_in){
     p_tail_nucleotide = p_head_nucleotide;
     return;
   }
-  Nucleotide* new_nucleotide= new Nucleotide(nucleotide_in);
-  p_tail_nucleotide->set_next_nucleotide(new_nucleotide);
-  new_nucleotide->set_prev_nucleotide(p_tail_nucleotide);
-  p_tail_nucleotide = new_nucleotide;
+  Nucleotide* new_nuc= new Nucleotide(nucleotide_in);
+  p_tail_nucleotide->set_next_nucleotide(new_nuc);
+  new_nuc->set_prev_nucleotide(p_tail_nucleotide);
+  p_tail_nucleotide = new_nuc;
 }
 void DNAsequence::add_nucleotide_front(char nucleotide_in){
   // Nucleotide* p_temp=p_head_nucleotide;
@@ -384,10 +393,10 @@ void DNAsequence::add_nucleotide_front(char nucleotide_in){
     p_tail_nucleotide = p_head_nucleotide;
     return;
   }
-  Nucleotide* new_nucleotide= new Nucleotide(nucleotide_in);
-  p_head_nucleotide->set_prev_nucleotide(new_nucleotide);
-  new_nucleotide->set_next_nucleotide(p_head_nucleotide);
-  p_head_nucleotide= new_nucleotide;
+  Nucleotide* new_nuc= new Nucleotide(nucleotide_in);
+  p_head_nucleotide->set_prev_nucleotide(new_nuc);
+  new_nuc->set_next_nucleotide(p_head_nucleotide);
+  p_head_nucleotide= new_nuc;
 }
 void DNAsequence::Find_DNA_sequence_by_input(TicToc time){
   string input;
@@ -414,9 +423,9 @@ void DNAsequence::Find_DNA_sequence_by_input(TicToc time){
   while(p_seek_file!=nullptr){
     start_index++;
     p_seek_input=input_DNAsequence.get_Nucleotide_head();
+    p_return_to_place=p_seek_file;
     if (p_seek_file->get_nucleotide()==p_seek_input->get_nucleotide()){
       p_print_10_temp=p_seek_file; //sets print_10 pointer to the first nucleotide in the matched sequence
-      p_return_to_place=p_seek_file;
       for(counter=1; counter<input.length(); counter++){
         p_seek_file=p_seek_file->get_next_nucleotide();
         p_seek_input=p_seek_input->get_next_nucleotide();
@@ -427,6 +436,7 @@ void DNAsequence::Find_DNA_sequence_by_input(TicToc time){
       if (counter==input.length()){
         cout << endl << "you found a match!" << endl;
         match=true;
+        start_index--;
         end_index=start_index+input.length()-1;
         DNAsequence ten_bases_before;
         DNAsequence ten_bases_after;
@@ -465,13 +475,14 @@ void DNAsequence::Find_DNA_sequence_by_input(TicToc time){
         }
       }
     }
-
-    // p_seek_file=p_seek_file->get_next_nucleotide();
     if (p_return_to_place != nullptr){
       p_seek_file=p_return_to_place->get_next_nucleotide();
     } else {
       p_seek_file = nullptr;
     }
+
+    // p_seek_file=p_seek_file->get_next_nucleotide();
+
 
   }
   if (match==false)
@@ -585,7 +596,7 @@ void DNAsequence::Add_DNA_sequence_by_input(TicToc time){
   cout << ">";
   cin >> input;
   Nucleotide* head = new Nucleotide(input[0]); //defines a pointer that holds the first nucleotide in the inputed sequence
-  Nucleotide* tail = head; //defines a pointer that holds the last nucleotide int he inputted sequence. At first, since there is only one nucleotide in the inputted sequence, it will be equal to the first nucleotide
+  Nucleotide* tail = head; //defines a pointer that holds the last nucleotide in the inputted sequence. At first, since there is only one nucleotide in the inputted sequence, it will be equal to the first nucleotide
 
   for (int i=1; i<input.length(); i++){
     Nucleotide* new_nuc = new Nucleotide(input[i]);   //loads contents of string into array
@@ -601,24 +612,54 @@ void DNAsequence::Add_DNA_sequence_by_input(TicToc time){
   for (int i=0; i<start_index; i++){  //finds pointer that points to where we want to insert new sequence
     p_seek_file=p_seek_file->get_next_nucleotide();
   }
-  Nucleotide* start = p_seek_file->get_prev_nucleotide(); //start is the nucleotide before the position where we want to insert
-  if (start != nullptr){
-    start->set_next_nucleotide(head); //sets the nucelotide after start to the first nucleotide in the inputted sequence
-  } else {
-    p_head_nucleotide = head; //if inserting at the start if the file we are editing, the first nucleotide of the inputted sequence becomes the start of the file
+//   if (p_seek_file != nullptr){  //if sequence is not being added to the end of the original file
+//     Nucleotide* start = p_seek_file->get_prev_nucleotide(); //start is the nucleotide before the position where we want to insert
+//     head->set_prev_nucleotide(start); //sets previous node of inserted sequence to where it is being inserted
+//     start->set_next_nucleotide(head);
+//     p_seek_file->set_prev_nucleotide(tail); //sets the prev nucleotide of the part of the original sequence after the addition to the end of the addition
+//     tail->set_next_nucleotide(p_seek_file);//sets the next nucleotide of the added sequence to part of the sequence after insertion
+//     set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
+//   }else { //if the sequence is being added to the end of the file
+//     p_tail_nucleotide->set_next_nucleotide(head); //sets the next node end of the file to the start of the inputted sequence
+//     head->set_prev_nucleotide(p_tail_nucleotide); //sets the previous node of the inputted sequence to be the end of the file
+//     set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
+//   }
+// ////////
+  if(start_index!=0){
+    if (p_seek_file != nullptr){  //if sequence is not being added to the end of the original file
+      Nucleotide* start = p_seek_file->get_prev_nucleotide(); //start is the nucleotide before the position where we want to insert
+      head->set_prev_nucleotide(start); //sets previous node of inserted sequence to where it is being inserted
+      start->set_next_nucleotide(head);
+      p_seek_file->set_prev_nucleotide(tail); //sets the prev nucleotide of the part of the original sequence after the addition to the end of the addition
+      tail->set_next_nucleotide(p_seek_file);//sets the next nucleotide of the added sequence to part of the sequence after insertion
+      set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
+    }else { //if the sequence is being added to the end of the file
+      p_tail_nucleotide->set_next_nucleotide(head); //sets the next node end of the file to the start of the inputted sequence
+      head->set_prev_nucleotide(p_tail_nucleotide); //sets the previous node of the inputted sequence to be the end of the file
+      set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
+    }
+  }
+  else{
+    tail->set_next_nucleotide(p_head_nucleotide);
+    p_head_nucleotide->set_prev_nucleotide(tail);
+    set_p_head_nucleotide(head);
   }
 
-  head->set_prev_nucleotide(start);
-  tail->set_next_nucleotide(p_seek_file);
-  if (p_seek_file != nullptr){
-    p_seek_file->set_prev_nucleotide(tail);
-  } else {
-    p_tail_nucleotide = tail;
-  }
-  //
-  // for (Nucleotide* p_seek=p_head_nucleotide; p_seek!=nullptr ; p_seek=p_seek->get_next_nucleotide()){
-  //   cout << p_seek->get_nucleotide();
-  // }
+
+//   Nucleotide* start = p_seek_file->get_prev_nucleotide(); //start is the nucleotide before the position where we want to insert
+//   if (start != nullptr){
+//     start->set_next_nucleotide(head); //sets the nucelotide after start to the first nucleotide in the inputted sequence
+//   } else {
+//     p_head_nucleotide = head; //if inserting at the start if the file we are editing, the first nucleotide of the inputted sequence becomes the start of the file
+//   }
+//   head->set_prev_nucleotide(start);
+//   tail->set_next_nucleotide(p_seek_file);
+//   if (p_seek_file != nullptr){
+//     p_seek_file->set_prev_nucleotide(tail);
+//   } else {
+//     set_p_tail_nucleotide(tail);
+//   }
+// /////////
   start_index=start_index-1;
   end_index=start_index+input.length()-1;
   DNAsequence ten_bases_before;
@@ -677,16 +718,16 @@ void DNAsequence::Add_DNA_sequence_by_file(TicToc time){
   }
   else{
     cout << "give the file a second to load... " << endl;
-    char nucleotide;
+    char nucleotide_in;
     while(!in.eof()){ //the first line of a .fna file is a descriptor line, hence this while loop gets the first line but does not store it anywhere
-      nucleotide=in.get();
-      if (nucleotide=='\n')
+      nucleotide_in=in.get();
+      if (nucleotide_in=='\n')
       break;
     }
     while(!in.eof()){   //gets each nucleotide from the rest of the file and enters it into a new DNAsequence
-      nucleotide=in.get();
-      Nucleotide* new_nuc = new Nucleotide(nucleotide);
-      if (nucleotide!='\n' && !in.eof()){
+      nucleotide_in=in.get();
+      Nucleotide* new_nuc = new Nucleotide(nucleotide_in);
+      if (nucleotide_in!='\n' && !in.eof()){
         if(head==nullptr){
           head=new_nuc;
           tail=head;
@@ -721,7 +762,7 @@ void DNAsequence::Add_DNA_sequence_by_file(TicToc time){
   if (p_seek_file != nullptr){
     p_seek_file->set_prev_nucleotide(tail);
   } else {
-    p_tail_nucleotide = tail;
+    set_p_tail_nucleotide(tail);
   }
   start_index=start_index;
   end_index=start_index+base_length_added-1;
@@ -930,6 +971,7 @@ void DNAsequence::Replace_DNA_sequence_by_input(TicToc time){
   p_after_deletion->set_prev_nucleotide(tail);
   tail->set_next_nucleotide(p_after_deletion);
 
+
   start_index=start_index;
   end_index=start_index+input.length()-1;
   DNAsequence ten_bases_before;
@@ -1094,6 +1136,27 @@ void DNAsequence::Replace_DNA_sequence_by_file(TicToc time){
   time.toc();
   cout << endl;
   cout << time << endl;
+}
+void DNAsequence::add_DNA_sequence(int start index,Nucleotide* p_seek_file, Nucleotide* tail, Nucleotide* head){
+  if(start_index!=0){
+    if (p_seek_file != nullptr){  //if sequence is not being added to the end of the original file
+      Nucleotide* start = p_seek_file->get_prev_nucleotide(); //start is the nucleotide before the position where we want to insert
+      head->set_prev_nucleotide(start); //sets previous node of inserted sequence to where it is being inserted
+      start->set_next_nucleotide(head);
+      p_seek_file->set_prev_nucleotide(tail); //sets the prev nucleotide of the part of the original sequence after the addition to the end of the addition
+      tail->set_next_nucleotide(p_seek_file);//sets the next nucleotide of the added sequence to part of the sequence after insertion
+      set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
+    }else { //if the sequence is being added to the end of the file
+      p_tail_nucleotide->set_next_nucleotide(head); //sets the next node end of the file to the start of the inputted sequence
+      head->set_prev_nucleotide(p_tail_nucleotide); //sets the previous node of the inputted sequence to be the end of the file
+      set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
+    }
+  }
+  else{
+    tail->set_next_nucleotide(p_head_nucleotide);
+    p_head_nucleotide->set_prev_nucleotide(tail);
+    set_p_head_nucleotide(head);
+  }
 }
 ostream& operator <<(ostream& os, const DNAsequence& DNAseq){
     Nucleotide* p_seek;
