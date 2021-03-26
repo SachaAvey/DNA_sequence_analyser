@@ -79,7 +79,7 @@ class DNADatabase: public DNAsequence{
     // ~DNADatabase();
     friend ostream& operator <<(ostream& os, const DNADatabase& DNAdtb);
 };
-void enter_file_name(DNADatabase*);
+void enter_file_name(DNADatabase*,TicToc);
 void Save_edited_DNA_sequence(DNAsequence, TicToc);
 bool whole_db=false;
 
@@ -108,7 +108,7 @@ int main(){
     if(choice==1){
       cout << "Enter the DNA file names:" << endl;
       cout << "For multiple files, separate them by a comma. Only .fna are recognised" << endl;
-      enter_file_name(&dna_db);
+      enter_file_name(&dna_db, time);
     }
     else if (choice==2){
       bool repeat=true;
@@ -160,7 +160,6 @@ int main(){
         }
         if (choice3==1){
           new_file.Find_DNA_sequence_by_input(time);
-          cout << "new file" << endl << new_file << endl;
         }
         else if (choice3==2){
           string tempstring;
@@ -168,32 +167,25 @@ int main(){
           cout << ">";
           cin >> tempstring;
           new_file.Find_DNA_sequence_by_file(time, tempstring);
-          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==3){
           new_file.Add_DNA_sequence_by_input(time);
-          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==4){
           new_file.Add_DNA_sequence_by_file(time);
-          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==5){
           new_file.Delete_DNA_sequence_by_input(time);
-          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==6){
           new_file.Replace_DNA_sequence_by_input(time);
-          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==7){
           new_file.Replace_DNA_sequence_by_file(time);
-          cout << "new file" << endl << file_pointer << endl;
         }
         if (choice3==8){
           //dna_db.
           Save_edited_DNA_sequence(new_file,time);
-          cout << "new file" << endl << new_file << endl;
         }
       }
     }
@@ -213,7 +205,7 @@ int main(){
   return 0;
 }
 
-void enter_file_name(DNADatabase *dna_db){
+void enter_file_name(DNADatabase *dna_db, TicToc time){
   string filename;
   cout << ">";
   cin.ignore(); //clearing cin
@@ -230,6 +222,7 @@ void enter_file_name(DNADatabase *dna_db){
   v.push_back(filename.substr(stringstart,filename.size()-stringstart)); // stores the last string of the input when there isnt a comma to end the string
   DNAsequence* file_pointer;  //pointer to the file in database linked list that we will be filling with data
   bool first = true;    //bool vlaue for the first line of the file, which we want to ignore as it only holds descriptors and not nucleotide data
+  time.tic();
   for(int i=0; i<v.size(); i++){
     bool valid = true;
     string string_vector=v[i];
@@ -267,7 +260,6 @@ void enter_file_name(DNADatabase *dna_db){
       tempstring=v[i];
       dna_db->addfile(tempstring); //if the name is in the proper .fna format it will be added to the database
       file_pointer=dna_db->get_p_tail_DNAsequence();
-
       fstream in;             //used to open the file
       in.open(tempstring, fstream::in);   //opens the file that we entered into the program prviously and names the data stream that we will be getting data from "in"
       if (in.fail())          //checks to see if the file has failed to open
@@ -296,10 +288,13 @@ void enter_file_name(DNADatabase *dna_db){
       in.close();           //closes the input file
     }
   }
+  time.toc();
+  cout << endl;
+  cout << time << endl;
 }
 void Save_edited_DNA_sequence(DNAsequence DNAsequence_in, TicToc time){
   string filename;
-  // DNAsequence* p_DNAsequence_in=&DNAsequence_in;
+  int counter=0;
   Nucleotide* p_seek=DNAsequence_in.get_Nucleotide_head();
   cout << "enter a filename for the file you want to save: " << endl;
   cout << ">";
@@ -309,23 +304,18 @@ void Save_edited_DNA_sequence(DNAsequence DNAsequence_in, TicToc time){
   ofstream myfile (filename);
   if (myfile.is_open())
   {
+    myfile << ">descriptor line: this file is an edited version of " << DNAsequence_in.getfilename() << endl;
     while(p_seek!=nullptr){
+      counter++;
       myfile << p_seek->get_nucleotide();
       p_seek=p_seek->get_next_nucleotide();
+      if (counter%70==0){
+        myfile << "\n";
+      }
     }
     myfile.close();
   }
   else cout << "Unable to open file";
-  // if (p_head_DNAsequence==nullptr){
-  //   p_head_DNAsequence= p_DNAsequence_in;
-  //   p_tail_DNAsequence=p_head_DNAsequence;
-  //   return;
-  // }
-  // p_DNAsequence_in->set_filename(filename);
-  // p_DNAsequence_in->set_prev_DNAsequence(p_tail_DNAsequence);
-  // p_tail_DNAsequence->set_Next_DNAsequence(p_DNAsequence_in);
-  // p_tail_DNAsequence=p_DNAsequence_in;
-  // addfile(filename, p_DNAsequence_in);
   time.toc();
   cout << endl;
   cout << time << endl;
@@ -472,6 +462,7 @@ void DNAsequence::Find_DNA_sequence_by_file(TicToc time, string tempstring){
   if (in.fail())          //checks to see if the file has failed to open
   {
     cout << "Input file opening failed.\n";   //if file failed to open the program will output this
+    return;
   }
   else{
     cout << "give the file a second to load... " << endl;
@@ -494,7 +485,9 @@ void DNAsequence::Find_DNA_sequence_by_file(TicToc time, string tempstring){
   find_sequence(p_seek_file,base_length,input_DNAsequence);
   time.toc();
   cout << endl;
-  cout << time << endl;
+  if (!whole_db){
+    cout << time << endl;
+  }
 }
 void DNAsequence::Add_DNA_sequence_by_input(TicToc time){
   string input;
@@ -584,6 +577,7 @@ void DNAsequence::Add_DNA_sequence_by_file(TicToc time){
   if (in.fail())          //checks to see if the file has failed to open
   {
     cout << "Input file opening failed.\n";   //if file failed to open the program will output this
+    return;
   }
   else{
     cout << "give the file a second to load... " << endl;
@@ -707,14 +701,11 @@ void DNAsequence::Delete_DNA_sequence_by_input(TicToc time){
   } else {
     p_after_deletion=p_seek;
   }
-
-  cout << "p_after_deletion" << p_after_deletion->get_nucleotide() << endl;
   if (p_before_deletion!=nullptr){
     p_before_deletion->set_next_nucleotide(p_after_deletion);
   } else {
     p_head_nucleotide = p_after_deletion;
   }
-    cout << p_before_deletion << endl;
     p_after_deletion->set_prev_nucleotide(p_before_deletion);
 
   start_index=start_index;
@@ -735,7 +726,7 @@ void DNAsequence::Delete_DNA_sequence_by_input(TicToc time){
   cout << ten_bases_before << endl;
   cout << "Deleted sequence:  " << deleted_sequence << endl;
 
-  cout << "10 base pairs following matched sequence:  ";
+  cout << "10 base pairs following deleted sequence:  ";
   // obtaining 10 following base pairs
   p_print_10_temp=p_after_deletion; //sets print_10 pointer to the nucleotide before deleted sequence
   for (int i=0; i<10; i++ ){
@@ -826,6 +817,7 @@ void DNAsequence::Replace_DNA_sequence_by_file(TicToc time){
   if (in.fail())          //checks to see if the file has failed to open
   {
     cout << "Input file opening failed.\n";   //if file failed to open the program will output this
+    return;
   }
   else{
     cout << "give the file a second to load... " << endl;
@@ -1068,6 +1060,7 @@ DNAsequence* DNADatabase::get_p_tail_DNAsequence(){
   return p_tail_DNAsequence;
 }
 void DNADatabase::Analyse_the_DNA_database(TicToc time, string tempstring){
+  time.tic();
   DNAsequence* p_seek=p_head_DNAsequence;
   whole_db = true;
   while(p_seek!=nullptr){
@@ -1075,6 +1068,9 @@ void DNADatabase::Analyse_the_DNA_database(TicToc time, string tempstring){
     p_seek=p_seek->get_next_DNAsequence();
   }
   whole_db = false;
+  time.toc();
+  cout << endl;
+  cout << time << endl;
 }
 string DNADatabase::choosefile(int choice2){
   DNAsequence* p_seek=p_head_DNAsequence;
