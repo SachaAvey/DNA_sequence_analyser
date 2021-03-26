@@ -45,13 +45,14 @@ class DNAsequence{
     DNAsequence* get_next_DNAsequence();
     void add_nucleotide(char);
     void add_nucleotide_front(char);
-    void Find_DNA_sequence_by_input(TicToc time);
-    void Find_DNA_sequence_by_file(TicToc time, string tempstring);
-    void Add_DNA_sequence_by_input(TicToc time);
-    void Add_DNA_sequence_by_file(TicToc time);
-    void Delete_DNA_sequence_by_input(TicToc time);
-    void Replace_DNA_sequence_by_input(TicToc time);
-    void Replace_DNA_sequence_by_file(TicToc time);
+    void Find_DNA_sequence_by_input(TicToc);
+    void Find_DNA_sequence_by_file(TicToc, string);
+    void Add_DNA_sequence_by_input(TicToc);
+    void Add_DNA_sequence_by_file(TicToc);
+    void Delete_DNA_sequence_by_input(TicToc);
+    void Replace_DNA_sequence_by_input(TicToc);
+    void Replace_DNA_sequence_by_file(TicToc);
+    //void Save_edited_DNA_sequence(DNAsequence , TicToc);
     void add_DNA_sequence(int,Nucleotide*, Nucleotide*, Nucleotide*);
     void find_sequence(Nucleotide*, int ,DNAsequence);
     void replace_DNA_sequence(int, int, int ,Nucleotide*,Nucleotide*, Nucleotide*);
@@ -74,11 +75,12 @@ class DNADatabase: public DNAsequence{
     int size_of_database();
     DNAsequence* get_p_head_DNAsequence();
     DNAsequence* get_file_pointer(int choice2);
-    void Save_edited_DNA_sequence(DNAsequence, TicToc);
+    // void Save_edited_DNA_sequence(DNAsequence, TicToc);
     // ~DNADatabase();
     friend ostream& operator <<(ostream& os, const DNADatabase& DNAdtb);
 };
 void enter_file_name(DNADatabase*);
+void Save_edited_DNA_sequence(DNAsequence, TicToc);
 bool whole_db=false;
 
 int main(){
@@ -121,7 +123,6 @@ int main(){
           cout << "dna_db:     " << endl;
           cout << dna_db << endl;
           cout << "dna db print names fucntion:  " << endl;
-          //dna_db.printnames();
           cout << ">";
           cin >> choice2;
           if (cin.fail())
@@ -134,15 +135,9 @@ int main(){
             file_choice_2=dna_db.choosefile(choice2);
             cout << endl<< "currently processing file:  " << file_choice_2 << endl;
             file_pointer=dna_db.get_file_pointer(choice2); //returns pointer that points to the DNA sequence file we will be analysing
-
-            new_file.copylist(file_pointer);
+            new_file = *file_pointer;
             repeat=false;
           }
-          // if (cin.fail())
-          // {
-          //    cin.clear();
-          //    cin.ignore(500, '\n');
-          // }
         }
         cout << endl;
         cout << "Select from one of the following options" << endl;
@@ -173,30 +168,31 @@ int main(){
           cout << ">";
           cin >> tempstring;
           new_file.Find_DNA_sequence_by_file(time, tempstring);
-          cout << "new file" << endl << new_file << endl;
+          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==3){
           new_file.Add_DNA_sequence_by_input(time);
-          cout << "new file" << endl << new_file << endl;
+          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==4){
           new_file.Add_DNA_sequence_by_file(time);
-          cout << "new file" << endl << new_file << endl;
+          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==5){
           new_file.Delete_DNA_sequence_by_input(time);
-          cout << "new file" << endl << new_file << endl;
+          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==6){
           new_file.Replace_DNA_sequence_by_input(time);
-          cout << "new file" << endl << new_file << endl;
+          cout << "new file" << endl << file_pointer << endl;
         }
         else if (choice3==7){
           new_file.Replace_DNA_sequence_by_file(time);
-          cout << "new file" << endl << new_file << endl;
+          cout << "new file" << endl << file_pointer << endl;
         }
         if (choice3==8){
-          dna_db.Save_edited_DNA_sequence(new_file, time);
+          //dna_db.
+          Save_edited_DNA_sequence(new_file,time);
           cout << "new file" << endl << new_file << endl;
         }
       }
@@ -237,7 +233,7 @@ void enter_file_name(DNADatabase *dna_db){
   for(int i=0; i<v.size(); i++){
     bool valid = true;
     string string_vector=v[i];
-    cout << "processing " << string_vector << endl;
+    cout << endl << "processing " << string_vector << endl;
     for(int j=0; j<string_vector.size();j++){
       if (string_vector[j]==' '){
         string_vector.erase(string_vector.begin()+j);
@@ -259,10 +255,12 @@ void enter_file_name(DNADatabase *dna_db){
       v.erase(v.begin()+i); //if file entered is less than 5 characters long it will be ignored as it cannot have a .fda at the end of the name
       i--;
       valid=false;
+      cout << "Invalid file name.\n";
     } else if (v[i].substr(v[i].size()-4,4)!=".fna"){ //checks if last 4 characters in the entry are .fna
       v.erase(v.begin()+i); //if extension != fna the entry will be ignored
       i--;
       valid=false;
+      cout << "Invalid file name.\n";
     }
     if (valid==true){
       string tempstring;
@@ -294,12 +292,43 @@ void enter_file_name(DNADatabase *dna_db){
             // cout << nucleotide;
           }
         }
-        cout << endl;
-        //file_pointer=file_pointer->get_next_DNAsequence();
       }
       in.close();           //closes the input file
     }
   }
+}
+void Save_edited_DNA_sequence(DNAsequence DNAsequence_in, TicToc time){
+  string filename;
+  // DNAsequence* p_DNAsequence_in=&DNAsequence_in;
+  Nucleotide* p_seek=DNAsequence_in.get_Nucleotide_head();
+  cout << "enter a filename for the file you want to save: " << endl;
+  cout << ">";
+  cin.ignore(); //clearing cin
+  getline(cin,filename); //getting all inputs from user input, including white space
+  time.tic();
+  ofstream myfile (filename);
+  if (myfile.is_open())
+  {
+    while(p_seek!=nullptr){
+      myfile << p_seek->get_nucleotide();
+      p_seek=p_seek->get_next_nucleotide();
+    }
+    myfile.close();
+  }
+  else cout << "Unable to open file";
+  // if (p_head_DNAsequence==nullptr){
+  //   p_head_DNAsequence= p_DNAsequence_in;
+  //   p_tail_DNAsequence=p_head_DNAsequence;
+  //   return;
+  // }
+  // p_DNAsequence_in->set_filename(filename);
+  // p_DNAsequence_in->set_prev_DNAsequence(p_tail_DNAsequence);
+  // p_tail_DNAsequence->set_Next_DNAsequence(p_DNAsequence_in);
+  // p_tail_DNAsequence=p_DNAsequence_in;
+  // addfile(filename, p_DNAsequence_in);
+  time.toc();
+  cout << endl;
+  cout << time << endl;
 }
 
 // NUCLEOTIDE FUNCTIONS
@@ -829,6 +858,7 @@ void DNAsequence::Replace_DNA_sequence_by_file(TicToc time){
   cout << endl;
   cout << time << endl;
 }
+// void DNAsequence::
 void DNAsequence::find_sequence(Nucleotide* p_seek_file, int base_length,DNAsequence input_DNAsequence){
   int start_index=-1;
   Nucleotide* p_print_10_temp; //defines new pointer to a nucleotide that we will use to print 10 bases before and after match
@@ -844,6 +874,9 @@ void DNAsequence::find_sequence(Nucleotide* p_seek_file, int base_length,DNAsequ
       p_print_10_temp=p_seek_file; //sets print_10 pointer to the first nucleotide in the matched sequence
       for(counter=1; counter<base_length; counter++){
         p_seek_file=p_seek_file->get_next_nucleotide();
+        if (p_seek_file==nullptr){
+          break;
+        }
         p_seek_input=p_seek_input->get_next_nucleotide();
         if(p_seek_file->get_nucleotide()!=p_seek_input->get_nucleotide()){
           break;
@@ -1068,19 +1101,6 @@ int DNADatabase::size_of_database(){
     counter++;
   }
   return counter;
-}
-void DNADatabase::Save_edited_DNA_sequence(DNAsequence DNAsequence_in, TicToc time){
-  string filename;
-  DNAsequence* p_DNAsequence_in=&DNAsequence_in;
-  cout << "enter a filename for the file you want to save: " << endl;
-  cout << ">";
-  cin.ignore(); //clearing cin
-  getline(cin,filename); //getting all inputs from user input, including white space
-  time.tic();
-  addfile(filename, p_DNAsequence_in);
-  time.toc();
-  cout << endl;
-  cout << time << endl;
 }
 ostream& operator <<(ostream& os, const DNADatabase& DNAdtb){
     DNAsequence* p_seek;
