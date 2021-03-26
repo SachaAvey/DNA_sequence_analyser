@@ -625,25 +625,26 @@ void DNAsequence::Add_DNA_sequence_by_input(TicToc time){
 //     set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
 //   }
 // ////////
-  if(start_index!=0){
-    if (p_seek_file != nullptr){  //if sequence is not being added to the end of the original file
-      Nucleotide* start = p_seek_file->get_prev_nucleotide(); //start is the nucleotide before the position where we want to insert
-      head->set_prev_nucleotide(start); //sets previous node of inserted sequence to where it is being inserted
-      start->set_next_nucleotide(head);
-      p_seek_file->set_prev_nucleotide(tail); //sets the prev nucleotide of the part of the original sequence after the addition to the end of the addition
-      tail->set_next_nucleotide(p_seek_file);//sets the next nucleotide of the added sequence to part of the sequence after insertion
-      set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
-    }else { //if the sequence is being added to the end of the file
-      p_tail_nucleotide->set_next_nucleotide(head); //sets the next node end of the file to the start of the inputted sequence
-      head->set_prev_nucleotide(p_tail_nucleotide); //sets the previous node of the inputted sequence to be the end of the file
-      set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
-    }
-  }
-  else{
-    tail->set_next_nucleotide(p_head_nucleotide);
-    p_head_nucleotide->set_prev_nucleotide(tail);
-    set_p_head_nucleotide(head);
-  }
+void DNAsequence::add_DNA_sequence(int start_index,Nucleotide* p_seek_file, Nucleotide* tail, Nucleotide* head)
+  // if(start_index!=0){
+  //   if (p_seek_file != nullptr){  //if sequence is not being added to the end of the original file
+  //     Nucleotide* start = p_seek_file->get_prev_nucleotide(); //start is the nucleotide before the position where we want to insert
+  //     head->set_prev_nucleotide(start); //sets previous node of inserted sequence to where it is being inserted
+  //     start->set_next_nucleotide(head);
+  //     p_seek_file->set_prev_nucleotide(tail); //sets the prev nucleotide of the part of the original sequence after the addition to the end of the addition
+  //     tail->set_next_nucleotide(p_seek_file);//sets the next nucleotide of the added sequence to part of the sequence after insertion
+  //     set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
+  //   }else { //if the sequence is being added to the end of the file
+  //     p_tail_nucleotide->set_next_nucleotide(head); //sets the next node end of the file to the start of the inputted sequence
+  //     head->set_prev_nucleotide(p_tail_nucleotide); //sets the previous node of the inputted sequence to be the end of the file
+  //     set_p_tail_nucleotide(tail); //sets the end nucleotide of the file to be the end of the inputted sequence
+  //   }
+  // }
+  // else{
+  //   tail->set_next_nucleotide(p_head_nucleotide);
+  //   p_head_nucleotide->set_prev_nucleotide(tail);
+  //   set_p_head_nucleotide(head);
+  // }
 
 
 //   Nucleotide* start = p_seek_file->get_prev_nucleotide(); //start is the nucleotide before the position where we want to insert
